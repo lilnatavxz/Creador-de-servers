@@ -38,11 +38,30 @@ import discord
 from discord.ext import commands
 
 # ---------------------------------------------------------------------
-# 1) ROLES (nombre, color hex). El orden de la lista = de más alto a
-#    más bajo en la jerarquía final (arriba = más poder).
+# 1) ROLES (nombre, color hex o None). El orden de la lista = de más
+#    alto a más bajo en la jerarquía final (arriba = más poder).
+#    Las entradas con color None son separadores visuales: se crean
+#    SIN color (color por defecto de Discord) para que no choquen
+#    con los colores reales de los roles.
 # ---------------------------------------------------------------------
 ROLES = [
-    # Staff supremo
+    ("────────── 𝖠𝖣𝖬𝖨𝖭𝖨𝖲𝖳𝖱𝖠𝖢𝖨𝖮𝖭 ──────────", None),
+    ("LIGA | Administrador", "#F1C40F"),
+    ("LIGA | Admin Senior", "#E67E22"),
+    ("LIGA | Admin", "#E74C3C"),
+    ("LIGA | Asistente De Admin", "#C0392B"),
+
+    ("────────── 𝖬𝖮𝖣𝖤𝖱𝖠𝖢𝖨𝖮𝖭 ──────────", None),
+    ("LIGA | Moderador", "#3498DB"),
+    ("LIGA | Moderador Senior", "#2980B9"),
+    ("LIGA | Moderador En Practicas", "#5DADE2"),
+
+    ("────────── 𝖧𝖤𝖫𝖯𝖤𝖱𝖲 ──────────", None),
+    ("LIGA | Helper", "#2ECC71"),
+    ("LIGA | Helper Senior", "#27AE60"),
+    ("LIGA | Helper En Practicas", "#58D68D"),
+
+    ("────────── 𝖲𝖳𝖠𝖥𝖥 ──────────", None),
     ("LIGA | Presidente Ejecutivo", "#F1C40F"),
     ("LIGA | Comite Disciplinario", "#E74C3C"),
     ("LIGA | Encargado de Fichajes", "#2ECC71"),
@@ -50,32 +69,14 @@ ROLES = [
     ("LIGA | KAR / Revisor", "#34495E"),
     ("LIGA | Prensa / Caster", "#9B59B6"),
     ("LIGA | Bot", "#131416"),
-    # Administracion
-    ("LIGA | Administrador", "#F1C40F"),
-    ("LIGA | Admin Senior", "#E67E22"),
-    ("LIGA | Admin", "#E74C3C"),
-    ("LIGA | Asistente De Admin", "#C0392B"),
-    # Moderacion
-    ("LIGA | Moderador", "#3498DB"),
-    ("LIGA | Moderador Senior", "#2980B9"),
-    ("LIGA | Moderador En Practicas", "#5DADE2"),
-    # Helpers
-    ("LIGA | Helper", "#2ECC71"),
-    ("LIGA | Helper Senior", "#27AE60"),
-    ("LIGA | Helper En Practicas", "#58D68D"),
-    # Honor y reconocimiento
-    ("LIGA | Leyenda / Hall of Fame", "#9B59B6"),
-    ("LIGA | Campeon de Liga", "#F1C40F"),
-    ("LIGA | Campeon de Copa", "#E74C3C"),
-    ("LIGA | MVP de la Semana", "#F39C12"),
-    # Direccion y mando
+
+    ("────────── 𝖣𝖨𝖱𝖤𝖢𝖢𝖨𝖮𝖭 𝖸 𝖬𝖠𝖭𝖣𝖮 ──────────", None),
     ("LIGA | Director Tecnico / DT", "#1ABC9C"),
     ("LIGA | Jugador Primera", "#F5F5F5"),
     ("LIGA | Jugador Segunda", "#BDC3C7"),
     ("LIGA | Agente Libre", "#7F8C8D"),
-    # Separador visual
-    ("LIGA | ─────────────", "#2B2D31"),
-    # Equipos 1ra Division
+
+    ("────────── 𝟣𝖣 | 𝖯𝖱𝖨𝖬𝖤𝖱𝖠 𝖣𝖨𝖵𝖨𝖲𝖨𝖮𝖭 ──────────", None),
     ("LIGA | 1D | Real Madrid", "#F5F5F5"),
     ("LIGA | 1D | FC Barcelona", "#3498DB"),
     ("LIGA | 1D | Bayern Munchen", "#E74C3C"),
@@ -92,9 +93,8 @@ ROLES = [
     ("LIGA | 1D | River Plate", "#F5F5F5"),
     ("LIGA | 1D | Boca Juniors", "#F1C40F"),
     ("LIGA | 1D | Palmeiras", "#27AE60"),
-    # Separador visual
-    ("LIGA | ─────────────", "#2B2D31"),
-    # Equipos 2da Division
+
+    ("────────── 𝟤𝖣 | 𝖲𝖤𝖦𝖴𝖭𝖣𝖠 𝖣𝖨𝖵𝖨𝖲𝖨𝖮𝖭 ──────────", None),
     ("LIGA | 2D | AC Milan", "#C0392B"),
     ("LIGA | 2D | Chelsea FC", "#2980B9"),
     ("LIGA | 2D | Manchester United", "#C0392B"),
@@ -111,6 +111,12 @@ ROLES = [
     ("LIGA | 2D | Independiente", "#E74C3C"),
     ("LIGA | 2D | Club America", "#DDE000"),
     ("LIGA | 2D | Tigres UANL", "#F1C40F"),
+
+    ("────────── 𝖱𝖤𝖢𝖮𝖭𝖮𝖢𝖨𝖬𝖨𝖤𝖭𝖳𝖮𝖲 ──────────", None),
+    ("LIGA | MVP de la Semana", "#F39C12"),
+    ("LIGA | Campeon de Liga", "#F1C40F"),
+    ("LIGA | Campeon de Copa", "#E74C3C"),
+    ("LIGA | Leyenda / Hall of Fame", "#9B59B6"),
 ]
 
 # ---------------------------------------------------------------------
@@ -419,7 +425,13 @@ class SetupLiga(commands.Cog):
         #         final de jerarquía quede como en la lista ROLES) ---
         creados = {}
         for nombre, color_hex in reversed(ROLES):
-            color = discord.Color(int(color_hex.replace("#", ""), 16))
+            # Separadores visuales: sin color (color por defecto) para
+            # que no choquen con los colores reales de los roles.
+            if color_hex is None:
+                color = discord.Color.default()
+            else:
+                color = discord.Color(int(color_hex.replace("#", ""), 16))
+
             existente = discord.utils.get(guild.roles, name=nombre)
             if existente:
                 creados[nombre] = existente
