@@ -419,12 +419,27 @@ class SetupLiga(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def setup_liga(self, ctx: commands.Context):
         guild = ctx.guild
-        msg = await ctx.send("⏳ Creando roles...")
+        msg = await ctx.send("⏳ Borrando roles antiguos de la liga...")
 
-        # --- 1. Crear roles (de abajo hacia arriba para que el orden
-        #         final de jerarquía quede como en la lista ROLES) ---
+        # --- 0. Borrar los roles de la liga que ya existan, para
+        #         recrearlos limpios en el orden correcto ---
+        nombres_liga = {nombre for nombre, _ in ROLES}
+        for rol in list(guild.roles):
+            if rol.name in nombres_liga:
+                try:
+                    await rol.delete(reason="Recreando roles de la liga en el orden correcto")
+                except discord.Forbidden:
+                    pass
+
+        await msg.edit(content="⏳ Creando roles nuevos...")
+
+        # --- 1. Crear roles en el orden normal de la lista.
+        #         Discord inserta cada rol nuevo justo encima de
+        #         @everyone y empuja hacia arriba a los ya creados,
+        #         así que crear en este orden deja el primero de la
+        #         lista (arriba) como el más alto en la jerarquía. ---
         creados = {}
-        for nombre, color_hex in reversed(ROLES):
+        for nombre, color_hex in ROLES:
             # Separadores visuales: sin color (color por defecto) para
             # que no choquen con los colores reales de los roles.
             if color_hex is None:
@@ -432,10 +447,6 @@ class SetupLiga(commands.Cog):
             else:
                 color = discord.Color(int(color_hex.replace("#", ""), 16))
 
-            existente = discord.utils.get(guild.roles, name=nombre)
-            if existente:
-                creados[nombre] = existente
-                continue
             rol = await guild.create_role(
                 name=nombre,
                 color=color,
